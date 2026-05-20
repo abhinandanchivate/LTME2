@@ -1,0 +1,373 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.root { font-family: var(--font-sans); }
+.phase-nav { display: flex; gap: 0; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 1.5rem; }
+.phase-btn { flex: 1; padding: 10px 6px; font-size: 11px; font-family: var(--font-mono); font-weight: 500; background: transparent; border: none; border-right: 0.5px solid var(--color-border-tertiary); cursor: pointer; color: var(--color-text-secondary); transition: all .2s; text-align: center; line-height: 1.4; }
+.phase-btn:last-child { border-right: none; }
+.phase-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+.phase-btn.active { background: #e8602c; color: #fff; }
+.phase-btn .num { display: block; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.section { display: none; }
+.section.active { display: block; }
+.sec-label { font-size: 11px; font-family: var(--font-mono); color: var(--color-text-secondary); letter-spacing: 0.06em; text-transform: uppercase; margin: 1.2rem 0 8px; }
+.q-block { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden; margin-bottom: 8px; }
+.q-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; background: var(--color-background-secondary); transition: background .15s; }
+.q-head:hover { background: var(--color-background-tertiary); }
+.q-num { font-family: var(--font-mono); font-size: 10px; color: #e8602c; min-width: 20px; }
+.q-text { font-size: 13px; font-weight: 500; color: var(--color-text-primary); flex: 1; }
+.q-arrow { font-size: 12px; color: var(--color-text-secondary); transition: transform .2s; }
+.q-arrow.open { transform: rotate(90deg); }
+.q-body { display: none; padding: 12px 14px 14px; border-top: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); }
+.q-body.open { display: block; }
+.ans { font-size: 13px; color: var(--color-text-primary); line-height: 1.7; }
+.ans p { margin-bottom: 8px; }
+.ans p:last-child { margin-bottom: 0; }
+.ans code { font-family: var(--font-mono); font-size: 11px; background: var(--color-background-secondary); padding: 1px 5px; border-radius: 3px; color: #e8602c; }
+.kv-row { display: flex; gap: 10px; margin-bottom: 6px; font-size: 12px; align-items: baseline; }
+.kv-k { font-family: var(--font-mono); color: #e8602c; font-size: 11px; min-width: 90px; }
+.kv-v { color: var(--color-text-primary); line-height: 1.5; }
+.tag-inline { font-family: var(--font-mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(232,96,44,0.1); color: #c04a1c; }
+.prereq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.prereq-card { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px; }
+.prereq-card.must { border-left: 2px solid #e8602c; border-radius: 0; border-radius: var(--border-radius-md); }
+.prereq-card.good { border-left: 2px solid #4caf7d; }
+.prereq-card.nice { border-left: 2px solid #6b8ed6; }
+.prereq-card .lbl { font-size: 12px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.prereq-card .dtl { font-size: 11px; color: var(--color-text-secondary); line-height: 1.5; }
+.tag-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+.badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-family: var(--font-mono); }
+.badge.must { background: rgba(232,96,44,0.12); color: #c04a1c; border: 0.5px solid rgba(232,96,44,0.3); }
+.badge.good { background: rgba(76,175,125,0.12); color: #2d7a51; border: 0.5px solid rgba(76,175,125,0.3); }
+.badge.nice { background: rgba(107,142,214,0.12); color: #3a5ea0; border: 0.5px solid rgba(107,142,214,0.3); }
+.flow { display: flex; flex-direction: column; gap: 4px; margin-bottom: 1rem; }
+.flow-step { display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); cursor: pointer; transition: border-color .15s; }
+.flow-step:hover { border-color: #e8602c; }
+.flow-step.done { opacity: 0.55; }
+.step-circle { width: 22px; height: 22px; min-width: 22px; border-radius: 50%; background: #e8602c; color: #fff; font-size: 11px; font-family: var(--font-mono); font-weight: 600; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.step-circle.done-c { background: #4caf7d; }
+.step-body { flex: 1; }
+.step-lbl { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.step-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; line-height: 1.5; }
+.step-time { font-family: var(--font-mono); font-size: 10px; color: #e8602c; margin-top: 4px; }
+.chk { width: 16px; height: 16px; min-width: 16px; border: 0.5px solid var(--color-border-tertiary); border-radius: 3px; display: flex; align-items: center; justify-content: center; margin-top: 3px; cursor: pointer; font-size: 10px; }
+.chk.on { background: #4caf7d; border-color: #4caf7d; color: #fff; }
+.mmap-box { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px; cursor: pointer; transition: border-color .15s; margin-bottom: 4px; }
+.mmap-box:hover { border-color: #e8602c; }
+.mmap-box.hi { border-color: #e8602c; background: rgba(232,96,44,0.04); }
+.mnum { font-family: var(--font-mono); font-size: 10px; color: #e8602c; margin-bottom: 4px; }
+.mtitle { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; }
+.msub { font-size: 11px; color: var(--color-text-secondary); line-height: 1.5; }
+.arr-d { text-align: center; color: var(--color-border-tertiary); font-size: 14px; line-height: 1; margin: 2px 0; }
+.setup-block { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--color-text-secondary); line-height: 1.8; overflow-x: auto; margin-bottom: 8px; }
+.cmd { color: var(--color-text-primary); }
+.tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.tab { font-size: 11px; font-family: var(--font-mono); padding: 4px 10px; border-radius: 4px; border: 0.5px solid var(--color-border-tertiary); cursor: pointer; color: var(--color-text-secondary); background: transparent; transition: all .15s; }
+.tab.active { background: #e8602c; color: #fff; border-color: #e8602c; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+
+<div class="root">
+  <div style="margin-bottom:1rem;">
+    <div style="font-size:11px;font-family:var(--font-mono);color:#e8602c;margin-bottom:4px;">DAY 1 — KAFKA FUNDAMENTALS</div>
+    <div style="font-size:20px;font-weight:500;color:var(--color-text-primary);">Learning Workflow, Prerequisites & Answers</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px;">4 modules · ~6 hrs · all questions answered inline</div>
+  </div>
+
+  <div class="phase-nav">
+    <button class="phase-btn active" onclick="showSec('prereqs',this)"><span class="num">①</span>Prerequisites</button>
+    <button class="phase-btn" onclick="showSec('workflow',this)"><span class="num">②</span>Workflow</button>
+    <button class="phase-btn" onclick="showSec('questions',this)"><span class="num">③</span>Q &amp; A</button>
+    <button class="phase-btn" onclick="showSec('setup',this)"><span class="num">④</span>Setup</button>
+  </div>
+
+  <!-- PREREQS -->
+  <div id="sec-prereqs" class="section active">
+    <div class="tag-row">
+      <span class="badge must">red = must-have</span>
+      <span class="badge good">green = good to have</span>
+      <span class="badge nice">blue = nice to have</span>
+    </div>
+    <div class="prereq-grid">
+      <div class="prereq-card must"><div class="lbl">Basic programming</div><div class="dtl">Write + run a simple script in any language. Java, Python, or JS all work for examples.</div></div>
+      <div class="prereq-card must"><div class="lbl">Networking basics</div><div class="dtl">Know what TCP/IP, ports, and client-server mean. No deep knowledge needed.</div></div>
+      <div class="prereq-card must"><div class="lbl">Queues & messaging</div><div class="dtl">Familiar with the idea of sending a message between services, even conceptually.</div></div>
+      <div class="prereq-card good"><div class="lbl">Linux / terminal</div><div class="dtl">Comfortable with basic shell — ls, cd, curl, running .sh scripts.</div></div>
+      <div class="prereq-card good"><div class="lbl">Docker basics</div><div class="dtl">Can run docker-compose up. Labs use a pre-built compose file.</div></div>
+      <div class="prereq-card good"><div class="lbl">Distributed systems</div><div class="dtl">Heard of replication, failover, or eventual consistency — even vaguely.</div></div>
+      <div class="prereq-card nice"><div class="lbl">Java / JVM</div><div class="dtl">Kafka is JVM-based. Helps to read configs and logs. Not required for client examples.</div></div>
+      <div class="prereq-card nice"><div class="lbl">Database concepts</div><div class="dtl">Understanding of logs, offsets, and durability maps directly to Kafka's storage model.</div></div>
+    </div>
+    <div class="sec-label">self-check — 4 questions before module 1 (click to expand)</div>
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">Q1</span><span class="q-text">What is a message queue and how does it differ from a database?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans"><p>A message queue is a buffer that holds messages sent by producers until a consumer reads them. It decouples the sender from the receiver — the producer doesn't need to know who will consume the message or when.</p><p>A database stores data persistently for querying. A queue stores data transiently for delivery. Key differences: queues are optimized for throughput and delivery, not arbitrary reads; messages are typically deleted after consumption; and queues guarantee ordering within a channel whereas databases have no such guarantee by default.</p></div></div>
+    </div>
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">Q2</span><span class="q-text">What is publish/subscribe messaging?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans"><p>In pub/sub, producers publish messages to a named channel (topic) without knowing who will consume them. Multiple consumers can independently subscribe to that topic and each receive a copy of every message.</p><p>This contrasts with point-to-point queues where a message goes to exactly one consumer. Pub/sub enables fan-out — one payment event can simultaneously notify fraud detection, accounting, and notifications services.</p></div></div>
+    </div>
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">Q3</span><span class="q-text">What does TCP guarantee that matters for messaging?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans"><p>TCP guarantees ordered, reliable, byte-stream delivery between two endpoints. It handles retransmission if packets are lost and ensures the receiver gets bytes in the same order the sender sent them.</p><p>This matters for Kafka because producers and consumers communicate with brokers over TCP. The network layer is reliable, so Kafka's reliability model (ACKs, replication) builds on top of TCP without needing to solve packet-level reliability itself.</p></div></div>
+    </div>
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">Q4</span><span class="q-text">What is eventual consistency in distributed systems?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans"><p>Eventual consistency means that if you stop writing new data, all replicas will converge to the same value — eventually. There is no guarantee about how quickly that happens, or that a read immediately after a write will see the new value.</p><p>In Kafka's context, follower replicas are eventually consistent with the leader. When a leader fails, only replicas in the ISR (in-sync replica set) are eligible for promotion, which limits how stale a new leader can be.</p></div></div>
+    </div>
+  </div>
+
+  <!-- WORKFLOW -->
+  <div id="sec-workflow" class="section">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem;">Each module builds on the last — do not skip or reorder.</div>
+    <div class="mmap-box hi" onclick="sendPrompt('Explain Kafka fundamentals — why Kafka exists, messaging vs streaming, and the payment event use case')">
+      <div class="mnum">MODULE 1 · 60 min</div><div class="mtitle">Kafka fundamentals</div>
+      <div class="msub">Why Kafka · Messaging vs streaming · Kafka ecosystem · Payment event use case</div>
+    </div>
+    <div class="arr-d">↓</div>
+    <div class="mmap-box" onclick="sendPrompt('Explain Kafka architecture — brokers, topics, partitions, replication, ISR, and leader election')">
+      <div class="mnum">MODULE 2 · 90 min</div><div class="mtitle">Architecture — how Kafka stores and distributes data</div>
+      <div class="msub">Brokers · Topics · Partitions · Replication · ISR · Leader election</div>
+    </div>
+    <div class="arr-d">↓</div>
+    <div class="mmap-box" onclick="sendPrompt('Explain Kafka producers and consumers — producer flow, consumer groups, offsets, and delivery semantics')">
+      <div class="mnum">MODULE 3 · 90 min</div><div class="mtitle">Producers and consumers</div>
+      <div class="msub">Producer flow · Consumer groups · Offset management · Delivery semantics</div>
+    </div>
+    <div class="arr-d">↓</div>
+    <div class="mmap-box" onclick="sendPrompt('Explain Kafka reliability and ordering — ACKs, replication factor, idempotent producers, key-based partitioning and ordering guarantees')">
+      <div class="mnum">MODULE 4 · 90 min</div><div class="mtitle">Reliability and ordering</div>
+      <div class="msub">ACKs · Replication factor · Idempotent producers · Key-based partitioning · Ordering guarantees</div>
+    </div>
+    <div class="sec-label" style="margin-top:1.5rem;">learning loop — repeat per module</div>
+    <div class="flow">
+      <div class="flow-step" onclick="sendPrompt('Give me a 5-minute concept primer on Kafka fundamentals')">
+        <div class="step-circle" id="c1">1</div><div class="step-body"><div class="step-lbl">5-min concept primer</div><div class="step-sub">Build the mental model before details. Read the high-level overview first.</div><div class="step-time">↗ click to get primer from Claude</div></div>
+        <div class="chk" id="cb1" onclick="tog2(event,'cb1','c1')"></div>
+      </div>
+      <div class="flow-step" onclick="sendPrompt('Walk me through the core Kafka concepts with concrete analogies')">
+        <div class="step-circle" id="c2">2</div><div class="step-body"><div class="step-lbl">Deep-dive with analogies</div><div class="step-sub">Work through each concept. A Kafka topic is an append-only commit log — like a ledger.</div><div class="step-time">↗ click for analogy-based explanation</div></div>
+        <div class="chk" id="cb2" onclick="tog2(event,'cb2','c2')"></div>
+      </div>
+      <div class="flow-step" onclick="sendPrompt('Give me a hands-on Kafka lab — produce and consume messages with a real example')">
+        <div class="step-circle" id="c3">3</div><div class="step-body"><div class="step-lbl">Hands-on lab / code</div><div class="step-sub">Run the exercise. Produce real events. Observe consumer groups and offsets live.</div><div class="step-time">↗ click to get a lab exercise</div></div>
+        <div class="chk" id="cb3" onclick="tog2(event,'cb3','c3')"></div>
+      </div>
+      <div class="flow-step" onclick="sendPrompt('Give me 5 quick-fire concept-check questions on Kafka for Day 1')">
+        <div class="step-circle" id="c4">4</div><div class="step-body"><div class="step-lbl">Concept check (5 Qs)</div><div class="step-sub">Quiz yourself before moving on. If you can't answer, re-read that concept only.</div><div class="step-time">↗ click to get quiz questions</div></div>
+        <div class="chk" id="cb4" onclick="tog2(event,'cb4','c4')"></div>
+      </div>
+      <div class="flow-step" onclick="sendPrompt('What are common Kafka beginner mistakes and how do I avoid them?')">
+        <div class="step-circle" id="c5">5</div><div class="step-body"><div class="step-lbl">Review gotchas and anti-patterns</div><div class="step-sub">Kafka has sharp edges — rebalancing storms, misconfigured ACKs, offset misuse. Know them early.</div><div class="step-time">↗ click to see common pitfalls</div></div>
+        <div class="chk" id="cb5" onclick="tog2(event,'cb5','c5')"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q & A -->
+  <div id="sec-questions" class="section">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem;">All 12 kickoff questions answered. Click any row to expand.</div>
+
+    <div class="sec-label">module 1 — fundamentals</div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M1·1</span><span class="q-text">What exact problem does Kafka solve that a database or REST API can't?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>A REST API is synchronous — the caller blocks until the callee responds. If the callee is slow or down, the caller fails. A database can store events, but every service would need to poll it continuously, creating massive read load and tight coupling.</p>
+        <p>Kafka solves the <strong>decoupled async delivery</strong> problem at scale. Producers write events without waiting for consumers. Consumers read at their own pace. The event log is retained so late-joining or replaying consumers don't miss anything. At high throughput (millions of events/sec), no REST API or database can match Kafka's sequential disk I/O model.</p>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M1·2</span><span class="q-text">How is Kafka different from RabbitMQ or SQS?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <div class="kv-row"><span class="kv-k">RabbitMQ / SQS</span><span class="kv-v">Traditional queue — message is deleted after a consumer acknowledges it. Each message goes to one consumer. No replay.</span></div>
+        <div class="kv-row"><span class="kv-k">Kafka</span><span class="kv-v">Append-only log — messages are retained for a configurable duration. Multiple independent consumer groups each read the full log. Full replay is possible by resetting offsets.</span></div>
+        <div class="kv-row"><span class="kv-k">key insight</span><span class="kv-v">Kafka is a distributed log, not a queue. The consumer "moving through a log" model is fundamentally different from "pulling from a queue."</span></div>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M1·3</span><span class="q-text">Walk me through the payment event use case end-to-end</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>1. User clicks "Pay" → payment service produces an event <code>{"payment_id":"p123","amount":500,"status":"initiated"}</code> to the <code>payments</code> topic.</p>
+        <p>2. Three independent consumer groups read the same event: fraud-detection service (checks rules), ledger service (debits account), notifications service (sends SMS).</p>
+        <p>3. Each service processes at its own speed. If notifications is slow, it doesn't block fraud detection. If ledger crashes, it replays from its last committed offset.</p>
+        <p>4. A second event <code>{"status":"completed"}</code> is produced after bank confirmation. All consumers see both events in order within the partition.</p>
+      </div></div>
+    </div>
+
+    <div class="sec-label">module 2 — architecture</div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M2·1</span><span class="q-text">What exactly is a Kafka broker?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>A broker is a server process that stores and serves event data. It receives messages from producers, writes them to disk in partition log files, and serves them to consumers on request.</p>
+        <p>A Kafka cluster is a group of brokers. Each broker holds some partitions as leader and some as follower replicas of other brokers' partitions. Brokers coordinate via ZooKeeper (legacy) or KRaft (modern). A single broker can handle hundreds of thousands of messages per second.</p>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M2·2</span><span class="q-text">Why does Kafka partition topics — what are the trade-offs?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>Partitions enable parallelism. A topic with 6 partitions across 3 brokers lets 6 consumer instances read simultaneously. Without partitions, a single topic would be a single-threaded bottleneck.</p>
+        <div class="kv-row"><span class="kv-k">more partitions</span><span class="kv-v">Higher throughput, more parallelism, but more broker memory/file handles and slower leader election</span></div>
+        <div class="kv-row"><span class="kv-k">fewer partitions</span><span class="kv-v">Lower overhead, but capped parallelism — consumer group can never use more consumers than partitions</span></div>
+        <div class="kv-row"><span class="kv-k">ordering</span><span class="kv-v">Ordering is guaranteed only within a partition, not across partitions</span></div>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M2·3</span><span class="q-text">What is an ISR and why does it matter?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>ISR = In-Sync Replica set. It's the subset of replicas that are fully caught up with the partition leader (within a lag threshold defined by <code>replica.lag.time.max.ms</code>).</p>
+        <p>ISR matters for two reasons: (1) When <code>acks=all</code>, the producer only gets acknowledgement after all ISR replicas confirm the write — so ISR size directly affects write latency. (2) Only a replica in the ISR can be elected as the new leader when the current leader fails, preventing data loss from promoting a stale replica.</p>
+      </div></div>
+    </div>
+
+    <div class="sec-label">module 3 — producers and consumers</div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M3·1</span><span class="q-text">How do consumer offsets work, and who stores them?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>An offset is an integer that marks the consumer's position in a partition log — the index of the last message successfully processed. Each consumer group maintains its own set of offsets, one per partition it reads.</p>
+        <p>Offsets are stored in the internal Kafka topic <code>__consumer_offsets</code> (since Kafka 0.9). The consumer commits offsets either automatically (every <code>auto.commit.interval.ms</code>) or manually after processing. On restart, the consumer resumes from its last committed offset rather than re-reading the whole log.</p>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M3·2</span><span class="q-text">What is a consumer group and how does parallelism work?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>A consumer group is a named set of consumer instances that jointly consume a topic. Kafka assigns each partition to exactly one consumer in the group at any time — no two consumers in the same group read the same partition simultaneously.</p>
+        <p>Parallelism rule: effective parallelism = <code>min(num_partitions, num_consumers_in_group)</code>. With 6 partitions and 4 consumers, 4 consumers each get some partitions and throughput scales. With 4 partitions and 6 consumers, 2 consumers sit idle — adding more consumers beyond the partition count does nothing.</p>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M3·3</span><span class="q-text">Explain at-most-once, at-least-once, and exactly-once delivery</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <div class="kv-row"><span class="kv-k">at-most-once</span><span class="kv-v">Commit offset before processing. If the consumer crashes mid-process, the message is lost. Fast but lossy. Use when dropping events is acceptable.</span></div>
+        <div class="kv-row"><span class="kv-k">at-least-once</span><span class="kv-v">Commit offset after processing. If the consumer crashes after processing but before committing, the message is re-delivered. Safe but may duplicate. Most common default.</span></div>
+        <div class="kv-row"><span class="kv-k">exactly-once</span><span class="kv-v">Requires idempotent producers + transactional consumers. Kafka coordinates offset commit and output write atomically. Highest correctness, highest complexity and cost.</span></div>
+      </div></div>
+    </div>
+
+    <div class="sec-label">module 4 — reliability and ordering</div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M4·1</span><span class="q-text">What does acks=all mean and what does it cost in performance?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p><code>acks=all</code> (equivalent to <code>acks=-1</code>) means the broker returns a success acknowledgement to the producer only after the partition leader has written the message AND all in-sync replicas have confirmed the write.</p>
+        <div class="kv-row"><span class="kv-k">acks=0</span><span class="kv-v">Fire and forget — fastest, no durability guarantee</span></div>
+        <div class="kv-row"><span class="kv-k">acks=1</span><span class="kv-v">Leader confirms — fast, but a message can be lost if the leader fails before replication</span></div>
+        <div class="kv-row"><span class="kv-k">acks=all</span><span class="kv-v">All ISR replicas confirm — safest, but adds replication round-trip latency. Pair with <code>min.insync.replicas=2</code> for best durability.</span></div>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M4·2</span><span class="q-text">How do idempotent producers prevent duplicate messages?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>Without idempotence: if a producer sends a message, the broker writes it, but the network drops the ACK — the producer retries and the broker writes a duplicate.</p>
+        <p>With <code>enable.idempotence=true</code>: every producer is assigned a PID (producer ID) and each message gets a monotonically increasing sequence number. The broker tracks the last sequence per PID per partition. If it receives a sequence number it has already seen, it silently deduplicates — no duplicate written, ACK sent back. This is transparent to application code.</p>
+      </div></div>
+    </div>
+
+    <div class="q-block">
+      <div class="q-head" onclick="tog(this)"><span class="q-num">M4·3</span><span class="q-text">How does key-based partitioning guarantee message ordering?</span><span class="q-arrow">▶</span></div>
+      <div class="q-body"><div class="ans">
+        <p>Kafka's default partitioner hashes the message key and maps it to a partition number: <code>partition = hash(key) % num_partitions</code>. All messages with the same key always land in the same partition.</p>
+        <p>Since Kafka guarantees ordering within a partition, all events for a given key are processed in the exact order they were produced. For payments: use <code>user_id</code> as the key so all events for a user land in one partition — debit always appears before refund for that user. Across different users, events may be interleaved, but that is fine since their ordering relative to each other is irrelevant.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="sec-setup" class="section">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem;">Choose your setup path — Docker is recommended for beginners.</div>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('docker',this)">Docker (recommended)</button>
+      <button class="tab" onclick="showTab('binary',this)">Binary / local</button>
+      <button class="tab" onclick="showTab('cloud',this)">Confluent Cloud</button>
+    </div>
+    <div id="tab-docker" class="tab-content active">
+      <div class="setup-block">
+        <span style="color:var(--color-text-secondary);"># Prerequisites: Docker Desktop installed</span><br>
+        <span class="cmd">git clone https://github.com/confluentinc/cp-all-in-one</span><br>
+        <span class="cmd">cd cp-all-in-one/cp-all-in-one</span><br>
+        <span class="cmd">docker-compose up -d</span><br><br>
+        <span style="color:var(--color-text-secondary);"># Verify Kafka is running on localhost:9092</span><br>
+        <span class="cmd">docker-compose ps</span>
+      </div>
+      <div class="kv-row"><span class="kv-k">broker</span><span class="kv-v">localhost:9092</span></div>
+      <div class="kv-row"><span class="kv-k">UI</span><span class="kv-v">Confluent Control Center at localhost:9021</span></div>
+    </div>
+    <div id="tab-binary" class="tab-content">
+      <div class="setup-block">
+        <span class="cmd">wget https://downloads.apache.org/kafka/3.7.0/kafka_2.13-3.7.0.tgz</span><br>
+        <span class="cmd">tar -xzf kafka_2.13-3.7.0.tgz && cd kafka_2.13-3.7.0</span><br><br>
+        <span style="color:var(--color-text-secondary);"># Terminal 1 — ZooKeeper</span><br>
+        <span class="cmd">bin/zookeeper-server-start.sh config/zookeeper.properties</span><br><br>
+        <span style="color:var(--color-text-secondary);"># Terminal 2 — Kafka broker</span><br>
+        <span class="cmd">bin/kafka-server-start.sh config/server.properties</span>
+      </div>
+      <div class="kv-row"><span class="kv-k">requires</span><span class="kv-v">Java 11+ (check: java -version)</span></div>
+    </div>
+    <div id="tab-cloud" class="tab-content">
+      <div class="setup-block">
+        <span style="color:var(--color-text-secondary);"># Install Confluent CLI</span><br>
+        <span class="cmd">curl -sL --http1.1 https://cnfl.io/cli | sh -s -- latest</span><br>
+        <span class="cmd">confluent login && confluent kafka cluster list</span>
+      </div>
+      <div class="kv-row"><span class="kv-k">best for</span><span class="kv-v">Windows users, low-RAM machines, or quick start with no local install</span></div>
+    </div>
+    <div class="sec-label" style="margin-top:1.5rem;">first commands — your hello world</div>
+    <div class="setup-block">
+      <span style="color:var(--color-text-secondary);"># Create your first topic</span><br>
+      <span class="cmd">kafka-topics.sh --create --topic payments --partitions 3 --replication-factor 1 --bootstrap-server localhost:9092</span><br><br>
+      <span style="color:var(--color-text-secondary);"># Produce a test event</span><br>
+      <span class="cmd">kafka-console-producer.sh --topic payments --bootstrap-server localhost:9092</span><br>
+      <span class="cmd">&gt; {"event":"payment","amount":100,"currency":"INR"}</span><br><br>
+      <span style="color:var(--color-text-secondary);"># Consume from beginning</span><br>
+      <span class="cmd">kafka-console-consumer.sh --topic payments --from-beginning --bootstrap-server localhost:9092</span>
+    </div>
+    <div class="q-block" style="margin-top:8px;">
+      <div class="q-head" onclick="sendPrompt('Help me troubleshoot my Kafka local setup — it is not connecting on localhost:9092')" style="cursor:pointer;">
+        <span class="q-num">?</span><span class="q-text">Help me troubleshoot my Kafka local setup ↗</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showSec(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function tog(head) {
+  const body = head.nextElementSibling;
+  const arr = head.querySelector('.q-arrow');
+  const open = body.classList.toggle('open');
+  arr.classList.toggle('open', open);
+}
+function tog2(e, cbId, circId) {
+  e.stopPropagation();
+  const cb = document.getElementById(cbId);
+  const step = cb.closest('.flow-step');
+  const circ = document.getElementById(circId);
+  const on = !cb.classList.contains('on');
+  cb.classList.toggle('on', on);
+  cb.textContent = on ? '✓' : '';
+  step.classList.toggle('done', on);
+  circ.className = on ? 'step-circle done-c' : 'step-circle';
+  if (on) circ.style.background = '#4caf7d'; else circ.style.background = '#e8602c';
+}
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>

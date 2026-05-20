@@ -1,0 +1,311 @@
+
+<style>
+  :root { --mono: 'Courier New', Courier, monospace; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+
+  .ws { display: grid; grid-template-columns: 220px 1fr; min-height: 600px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; background: var(--color-background-primary); }
+
+  .sidebar { background: var(--color-background-secondary); border-right: 0.5px solid var(--color-border-tertiary); padding: 0; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 14px 16px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .sidebar-header .proj { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+  .sidebar-header .sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+
+  .tree { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .tree-section { padding: 4px 12px 2px; font-size: 10px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 8px; }
+  .tree-item { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 20px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; border-radius: 0; transition: background 0.1s; }
+  .tree-item:hover { background: var(--color-background-primary); color: var(--color-text-primary); }
+  .tree-item.active { background: var(--color-background-info); color: var(--color-text-info); }
+  .tree-item i { font-size: 13px; flex-shrink: 0; }
+  .tree-item .fname { font-family: var(--font-mono); font-size: 11px; }
+
+  .main { display: flex; flex-direction: column; }
+  .tabs { display: flex; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); overflow-x: auto; }
+  .tab { padding: 8px 14px; font-size: 12px; cursor: pointer; border-right: 0.5px solid var(--color-border-tertiary); white-space: nowrap; color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .tab.active { background: var(--color-background-primary); color: var(--color-text-primary); border-bottom: 2px solid #378ADD; }
+  .tab i { font-size: 13px; }
+
+  .editor { flex: 1; padding: 0; overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; }
+  .code-block { padding: 16px 20px; }
+  .ln { color: var(--color-text-tertiary); user-select: none; display: inline-block; width: 28px; text-align: right; margin-right: 12px; font-size: 11px; }
+
+  .kw { color: #7F77DD; }
+  .str { color: #1D9E75; }
+  .cmt { color: var(--color-text-tertiary); font-style: italic; }
+  .dec { color: #D85A30; }
+  .fn { color: #185FA5; }
+  .type { color: #BA7517; }
+  .tag { color: #7F77DD; }
+  .attr { color: #185FA5; }
+  .val { color: #1D9E75; }
+  .prop { color: #D85A30; }
+  .num { color: #0F6E56; }
+
+  .file-banner { padding: 8px 20px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-text-tertiary); }
+  .file-banner i { font-size: 14px; }
+  .file-banner .path { font-family: var(--font-mono); }
+
+  .status-bar { padding: 4px 16px; border-top: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); display: flex; gap: 16px; font-size: 10px; color: var(--color-text-tertiary); align-items: center; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #639922; display: inline-block; }
+</style>
+
+<h2 class="sr-only">Angular + Spring Boot + Kubernetes workspace with code editor showing project files</h2>
+
+<div style="padding: 0.5rem 0 1rem;">
+
+<div style="display: flex; gap: 8px; margin-bottom: 10px; padding: 0 2px; flex-wrap: wrap;">
+  <div style="background: var(--color-background-info); color: var(--color-text-info); font-size: 11px; padding: 3px 10px; border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 5px;"><i class="ti ti-hexagon-letter-a" aria-hidden="true"></i> Angular 17</div>
+  <div style="background: var(--color-background-success); color: var(--color-text-success); font-size: 11px; padding: 3px 10px; border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 5px;"><i class="ti ti-leaf" aria-hidden="true"></i> Spring Boot 3.2</div>
+  <div style="background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); font-size: 11px; padding: 3px 10px; border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 5px;"><i class="ti ti-brand-docker" aria-hidden="true"></i> Kubernetes</div>
+  <div style="background: var(--color-background-warning); color: var(--color-text-warning); font-size: 11px; padding: 3px 10px; border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 5px;"><i class="ti ti-lock" aria-hidden="true"></i> Secret Management</div>
+</div>
+
+<div class="ws">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="proj"><i class="ti ti-folder" style="font-size:13px; margin-right:4px;" aria-hidden="true"></i>fullstack-workspace</div>
+      <div class="sub">mono-repo · 2 services</div>
+    </div>
+    <div class="tree">
+      <div class="tree-section">Angular App</div>
+      <div class="tree-item" onclick="showTab('module')"><i class="ti ti-file-type-ts" aria-hidden="true"></i><span class="fname">app.module.ts</span></div>
+      <div class="tree-item active" id="tab-tree-service" onclick="showTab('service')"><i class="ti ti-file-type-ts" aria-hidden="true"></i><span class="fname">api.service.ts</span></div>
+      <div class="tree-item" onclick="showTab('env')"><i class="ti ti-settings" aria-hidden="true"></i><span class="fname">environment.ts</span></div>
+
+      <div class="tree-section">Spring API</div>
+      <div class="tree-item" onclick="showTab('controller')"><i class="ti ti-file-type-java" aria-hidden="true"></i><span class="fname">ApiController.java</span></div>
+      <div class="tree-item" onclick="showTab('config')"><i class="ti ti-file-type-java" aria-hidden="true"></i><span class="fname">AppConfig.java</span></div>
+      <div class="tree-item" onclick="showTab('props')"><i class="ti ti-settings-2" aria-hidden="true"></i><span class="fname">application.yml</span></div>
+
+      <div class="tree-section">Kubernetes</div>
+      <div class="tree-item" onclick="showTab('secret')"><i class="ti ti-lock" aria-hidden="true"></i><span class="fname">secret.yaml</span></div>
+      <div class="tree-item" onclick="showTab('deploy')"><i class="ti ti-brand-docker" aria-hidden="true"></i><span class="fname">deployment.yaml</span></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="tabs" id="tabs">
+      <div class="tab active" id="tab-service" onclick="showTab('service')"><i class="ti ti-file-type-ts" aria-hidden="true"></i>api.service.ts</div>
+      <div class="tab" id="tab-controller" onclick="showTab('controller')"><i class="ti ti-file-type-java" aria-hidden="true"></i>ApiController.java</div>
+      <div class="tab" id="tab-props" onclick="showTab('props')"><i class="ti ti-settings-2" aria-hidden="true"></i>application.yml</div>
+      <div class="tab" id="tab-secret" onclick="showTab('secret')"><i class="ti ti-lock" aria-hidden="true"></i>secret.yaml</div>
+      <div class="tab" id="tab-deploy" onclick="showTab('deploy')"><i class="ti ti-brand-docker" aria-hidden="true"></i>deployment.yaml</div>
+    </div>
+
+    <div id="editor" class="editor">
+    </div>
+
+    <div class="status-bar">
+      <span><span class="status-dot"></span> ready</span>
+      <span>UTF-8</span>
+      <span id="status-lang">TypeScript</span>
+      <span style="margin-left: auto;">Angular ↔ Spring ↔ K8s</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const files = {
+  service: {
+    lang: 'TypeScript',
+    path: 'frontend/src/app/core/api.service.ts',
+    icon: 'ti-file-type-ts',
+    lines: [
+      [1, '<span class="kw">import</span> { Injectable } <span class="kw">from</span> <span class="str">\'@angular/core\'</span>;'],
+      [2, '<span class="kw">import</span> { HttpClient, HttpHeaders } <span class="kw">from</span> <span class="str">\'@angular/common/http\'</span>;'],
+      [3, '<span class="kw">import</span> { Observable } <span class="kw">from</span> <span class="str">\'rxjs\'</span>;'],
+      [4, '<span class="kw">import</span> { environment } <span class="kw">from</span> <span class="str">\'../environments/environment\'</span>;'],
+      [5, ''],
+      [6, '<span class="dec">@Injectable</span>({ providedIn: <span class="str">\'root\'</span> })'],
+      [7, '<span class="kw">export class</span> <span class="type">ApiService</span> {'],
+      [8, ''],
+      [9, '  <span class="kw">private</span> apiUrl = environment.apiUrl;'],
+      [10, ''],
+      [11, '  <span class="kw">constructor</span>(<span class="kw">private</span> http: <span class="type">HttpClient</span>) {}'],
+      [12, ''],
+      [13, '  <span class="cmt">// GET /api/items</span>'],
+      [14, '  <span class="fn">getItems</span>(): <span class="type">Observable</span>&lt;<span class="type">Item</span>[]&gt; {'],
+      [15, '    <span class="kw">return</span> <span class="kw">this</span>.http.<span class="fn">get</span>&lt;<span class="type">Item</span>[]&gt;(`${<span class="kw">this</span>.apiUrl}/items`);'],
+      [16, '  }'],
+      [17, ''],
+      [18, '  <span class="cmt">// POST /api/items</span>'],
+      [19, '  <span class="fn">createItem</span>(payload: <span class="type">Partial</span>&lt;<span class="type">Item</span>&gt;): <span class="type">Observable</span>&lt;<span class="type">Item</span>&gt; {'],
+      [20, '    <span class="kw">const</span> headers = <span class="kw">new</span> <span class="type">HttpHeaders</span>({ <span class="str">\'Content-Type\'</span>: <span class="str">\'application/json\'</span> });'],
+      [21, '    <span class="kw">return</span> <span class="kw">this</span>.http.<span class="fn">post</span>&lt;<span class="type">Item</span>&gt;(`${<span class="kw">this</span>.apiUrl}/items`, payload, { headers });'],
+      [22, '  }'],
+      [23, ''],
+      [24, '  <span class="fn">deleteItem</span>(id: <span class="type">number</span>): <span class="type">Observable</span>&lt;<span class="kw">void</span>&gt; {'],
+      [25, '    <span class="kw">return</span> <span class="kw">this</span>.http.<span class="fn">delete</span>&lt;<span class="kw">void</span>&gt;(`${<span class="kw">this</span>.apiUrl}/items/${id}`);'],
+      [26, '  }'],
+      [27, '}'],
+      [28, ''],
+      [29, '<span class="kw">export interface</span> <span class="type">Item</span> {'],
+      [30, '  id: <span class="type">number</span>;'],
+      [31, '  name: <span class="type">string</span>;'],
+      [32, '  createdAt: <span class="type">string</span>;'],
+      [33, '}'],
+    ]
+  },
+  controller: {
+    lang: 'Java',
+    path: 'backend/src/main/java/com/app/ApiController.java',
+    icon: 'ti-file-type-java',
+    lines: [
+      [1, '<span class="kw">package</span> com.app.controller;'],
+      [2, ''],
+      [3, '<span class="kw">import</span> org.springframework.beans.factory.annotation.Value;'],
+      [4, '<span class="kw">import</span> org.springframework.web.bind.annotation.*;'],
+      [5, '<span class="kw">import</span> java.util.List;'],
+      [6, ''],
+      [7, '<span class="dec">@RestController</span>'],
+      [8, '<span class="dec">@RequestMapping</span>(<span class="str">"/api"</span>)'],
+      [9, '<span class="dec">@CrossOrigin</span>(origins = <span class="str">"*"</span>)'],
+      [10, '<span class="kw">public class</span> <span class="type">ApiController</span> {'],
+      [11, ''],
+      [12, '  <span class="cmt">// Injected from K8s Secret → env var DB_URL</span>'],
+      [13, '  <span class="dec">@Value</span>(<span class="str">"${spring.datasource.url}"</span>)'],
+      [14, '  <span class="kw">private</span> <span class="type">String</span> dbUrl;'],
+      [15, ''],
+      [16, '  <span class="kw">private final</span> <span class="type">ItemService</span> itemService;'],
+      [17, ''],
+      [18, '  <span class="kw">public</span> <span class="fn">ApiController</span>(<span class="type">ItemService</span> itemService) {'],
+      [19, '    <span class="kw">this</span>.itemService = itemService;'],
+      [20, '  }'],
+      [21, ''],
+      [22, '  <span class="dec">@GetMapping</span>(<span class="str">"/items"</span>)'],
+      [23, '  <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">Item</span>&gt; <span class="fn">getItems</span>() {'],
+      [24, '    <span class="kw">return</span> itemService.<span class="fn">findAll</span>();'],
+      [25, '  }'],
+      [26, ''],
+      [27, '  <span class="dec">@PostMapping</span>(<span class="str">"/items"</span>)'],
+      [28, '  <span class="kw">public</span> <span class="type">Item</span> <span class="fn">create</span>(<span class="dec">@RequestBody</span> <span class="type">Item</span> item) {'],
+      [29, '    <span class="kw">return</span> itemService.<span class="fn">save</span>(item);'],
+      [30, '  }'],
+      [31, ''],
+      [32, '  <span class="dec">@DeleteMapping</span>(<span class="str">"/items/{id}"</span>)'],
+      [33, '  <span class="kw">public void</span> <span class="fn">delete</span>(<span class="dec">@PathVariable</span> <span class="type">Long</span> id) {'],
+      [34, '    itemService.<span class="fn">deleteById</span>(id);'],
+      [35, '  }'],
+      [36, ''],
+      [37, '  <span class="dec">@GetMapping</span>(<span class="str">"/health"</span>)'],
+      [38, '  <span class="kw">public</span> <span class="type">String</span> <span class="fn">health</span>() { <span class="kw">return</span> <span class="str">"ok"</span>; }'],
+      [39, '}'],
+    ]
+  },
+  props: {
+    lang: 'YAML',
+    path: 'backend/src/main/resources/application.yml',
+    icon: 'ti-settings-2',
+    lines: [
+      [1, '<span class="prop">spring</span>:'],
+      [2, '  <span class="prop">datasource</span>:'],
+      [3, '    <span class="cmt"># Values come from K8s Secret mounted as env vars</span>'],
+      [4, '    <span class="prop">url</span>:      <span class="str">${DB_URL}</span>'],
+      [5, '    <span class="prop">username</span>: <span class="str">${DB_USERNAME}</span>'],
+      [6, '    <span class="prop">password</span>: <span class="str">${DB_PASSWORD}</span>'],
+      [7, '    <span class="prop">driver-class-name</span>: <span class="val">org.postgresql.Driver</span>'],
+      [8, ''],
+      [9, '  <span class="prop">jpa</span>:'],
+      [10, '    <span class="prop">hibernate.ddl-auto</span>: <span class="val">update</span>'],
+      [11, '    <span class="prop">show-sql</span>: <span class="val">false</span>'],
+      [12, ''],
+      [13, '<span class="prop">server</span>:'],
+      [14, '  <span class="prop">port</span>: <span class="num">8080</span>'],
+      [15, ''],
+      [16, '<span class="prop">management</span>:'],
+      [17, '  <span class="prop">endpoints.web.exposure.include</span>: <span class="str">health,info</span>'],
+      [18, ''],
+      [19, '<span class="prop">app</span>:'],
+      [20, '  <span class="prop">jwt-secret</span>: <span class="str">${JWT_SECRET}</span>'],
+      [21, '  <span class="prop">cors-origin</span>: <span class="str">${CORS_ORIGIN:http://localhost:4200}</span>'],
+    ]
+  },
+  secret: {
+    lang: 'YAML',
+    path: 'k8s/secret.yaml',
+    icon: 'ti-lock',
+    lines: [
+      [1, '<span class="prop">apiVersion</span>: <span class="val">v1</span>'],
+      [2, '<span class="prop">kind</span>: <span class="val">Secret</span>'],
+      [3, '<span class="prop">metadata</span>:'],
+      [4, '  <span class="prop">name</span>: <span class="val">api-secrets</span>'],
+      [5, '  <span class="prop">namespace</span>: <span class="val">production</span>'],
+      [6, '  <span class="prop">labels</span>:'],
+      [7, '    <span class="prop">app</span>: <span class="val">spring-api</span>'],
+      [8, '<span class="prop">type</span>: <span class="val">Opaque</span>'],
+      [9, '<span class="prop">data</span>:'],
+      [10, '  <span class="cmt"># Values are base64-encoded</span>'],
+      [11, '  <span class="cmt"># echo -n "value" | base64</span>'],
+      [12, '  <span class="prop">DB_URL</span>:      <span class="str">amRiYzpwb3N0Z3Jlc3FsOi8v...</span>'],
+      [13, '  <span class="prop">DB_USERNAME</span>: <span class="str">YXBwdXNlcg==</span>'],
+      [14, '  <span class="prop">DB_PASSWORD</span>: <span class="str">c3VwZXJzZWNyZXQ=</span>'],
+      [15, '  <span class="prop">JWT_SECRET</span>:   <span class="str">bXlzdXBlcnNlY3JldGtleQ==</span>'],
+      [16, '  <span class="prop">CORS_ORIGIN</span>:  <span class="str">aHR0cHM6Ly9teWFwcC5jb20=</span>'],
+      [17, ''],
+      [18, '<span class="cmt">---</span>'],
+      [19, '<span class="cmt"># Apply with:</span>'],
+      [20, '<span class="cmt"># kubectl apply -f k8s/secret.yaml -n production</span>'],
+      [21, '<span class="cmt"># kubectl get secret api-secrets -o yaml</span>'],
+    ]
+  },
+  deploy: {
+    lang: 'YAML',
+    path: 'k8s/deployment.yaml',
+    icon: 'ti-brand-docker',
+    lines: [
+      [1, '<span class="prop">apiVersion</span>: <span class="val">apps/v1</span>'],
+      [2, '<span class="prop">kind</span>: <span class="val">Deployment</span>'],
+      [3, '<span class="prop">metadata</span>:'],
+      [4, '  <span class="prop">name</span>: <span class="val">spring-api</span>'],
+      [5, '  <span class="prop">namespace</span>: <span class="val">production</span>'],
+      [6, '<span class="prop">spec</span>:'],
+      [7, '  <span class="prop">replicas</span>: <span class="num">2</span>'],
+      [8, '  <span class="prop">selector</span>:'],
+      [9, '    <span class="prop">matchLabels</span>: { <span class="prop">app</span>: <span class="val">spring-api</span> }'],
+      [10, '  <span class="prop">template</span>:'],
+      [11, '    <span class="prop">metadata</span>:'],
+      [12, '      <span class="prop">labels</span>: { <span class="prop">app</span>: <span class="val">spring-api</span> }'],
+      [13, '    <span class="prop">spec</span>:'],
+      [14, '      <span class="prop">containers</span>:'],
+      [15, '        - <span class="prop">name</span>: <span class="val">api</span>'],
+      [16, '          <span class="prop">image</span>: <span class="str">registry/spring-api:latest</span>'],
+      [17, '          <span class="prop">ports</span>:'],
+      [18, '            - <span class="prop">containerPort</span>: <span class="num">8080</span>'],
+      [19, '          <span class="prop">envFrom</span>:'],
+      [20, '            - <span class="prop">secretRef</span>:'],
+      [21, '                <span class="prop">name</span>: <span class="val">api-secrets</span>   <span class="cmt"># ← K8s Secret</span>'],
+      [22, '          <span class="prop">resources</span>:'],
+      [23, '            <span class="prop">requests</span>: { <span class="prop">cpu</span>: <span class="str">"250m"</span>, <span class="prop">memory</span>: <span class="str">"256Mi"</span> }'],
+      [24, '            <span class="prop">limits</span>:   { <span class="prop">cpu</span>: <span class="str">"500m"</span>, <span class="prop">memory</span>: <span class="str">"512Mi"</span> }'],
+      [25, '          <span class="prop">livenessProbe</span>:'],
+      [26, '            <span class="prop">httpGet</span>: { <span class="prop">path</span>: <span class="str">/api/health</span>, <span class="prop">port</span>: <span class="num">8080</span> }'],
+      [27, '            <span class="prop">initialDelaySeconds</span>: <span class="num">30</span>'],
+      [28, '          <span class="prop">readinessProbe</span>:'],
+      [29, '            <span class="prop">httpGet</span>: { <span class="prop">path</span>: <span class="str">/api/health</span>, <span class="prop">port</span>: <span class="num">8080</span> }'],
+      [30, '            <span class="prop">initialDelaySeconds</span>: <span class="num">10</span>'],
+    ]
+  }
+};
+
+function renderCode(key) {
+  const f = files[key];
+  if (!f) return;
+  const lines = f.lines.map(([n, code]) =>
+    `<div><span class="ln">${n}</span>${code}</div>`
+  ).join('');
+  document.getElementById('editor').innerHTML =
+    `<div class="file-banner"><i class="ti ${f.icon}" aria-hidden="true"></i><span class="path">${f.path}</span></div><div class="code-block">${lines}</div>`;
+  document.getElementById('status-lang').textContent = f.lang;
+}
+
+function showTab(key) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tabEl = document.getElementById('tab-' + key);
+  if (tabEl) tabEl.classList.add('active');
+  document.querySelectorAll('.tree-item').forEach(t => t.classList.remove('active'));
+  renderCode(key);
+}
+
+renderCode('service');
+</script>
