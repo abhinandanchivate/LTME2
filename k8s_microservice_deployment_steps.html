@@ -1,0 +1,503 @@
+
+<h2 class="sr-only">Interactive step-by-step Kubernetes deployment guide for Payment and Notification microservices — 9 phases with YAML and kubectl commands</h2>
+<style>
+*{box-sizing:border-box}
+.sw{font-family:var(--font-sans);padding:1rem 0}
+.pbar{display:flex;gap:5px;margin-bottom:1.2rem}
+.pip{flex:1;height:4px;border-radius:2px;background:var(--color-border-tertiary);transition:background .3s}
+.pip.done{background:#1D9E75}.pip.active{background:#534AB7}
+.slbl{font-size:12px;color:var(--color-text-secondary);margin-bottom:.8rem;font-weight:500}
+.snum{display:inline-block;background:#EEEDFE;color:#3C3489;border-radius:5px;font-size:11px;font-weight:500;padding:2px 7px;margin-right:7px}
+.panel{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.1rem;background:var(--color-background-primary)}
+.ptitle{font-size:15px;font-weight:500;color:var(--color-text-primary);margin:0 0 5px}
+.psub{font-size:13px;color:var(--color-text-secondary);margin:0 0 .9rem;line-height:1.5}
+.tabs{display:flex;gap:6px;margin-bottom:.8rem;flex-wrap:wrap}
+.tab{padding:4px 12px;font-size:12px;border-radius:5px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.tab.on{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC}
+.code{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.7rem;font-family:var(--font-mono);font-size:11.5px;color:var(--color-text-primary);line-height:1.75;white-space:pre;overflow-x:auto;margin-top:.5rem}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:.7rem}
+.chip{font-size:11px;padding:3px 9px;border-radius:4px}
+.chip-g{background:#EAF3DE;color:#27500A}
+.chip-b{background:#E6F1FB;color:#0C447C}
+.chip-p{background:#EEEDFE;color:#3C3489}
+.chip-a{background:#FAEEDA;color:#633806}
+.chip-r{background:#FCEBEB;color:#791F1F}
+.nav{display:flex;gap:8px;margin-top:1rem;align-items:center}
+.nav button{padding:6px 16px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer}
+.nav button:hover{background:var(--color-background-secondary)}
+.nav button:disabled{opacity:.3;cursor:not-allowed}
+.nav .pri{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC}
+.nav .pri:hover{background:#CECBF6}
+.ask{margin-left:auto;font-size:12px;color:#185FA5;border:0.5px solid #B5D4F4;background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:4px 11px;cursor:pointer;white-space:nowrap}
+.ask:hover{background:#E6F1FB}
+.pctr{font-size:12px;color:var(--color-text-tertiary)}
+.svc-tabs{display:flex;gap:6px;margin-bottom:.8rem}
+.svc-tab{padding:4px 12px;font-size:12px;border-radius:5px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.svc-tab.on{background:#E1F5EE;color:#085041;border-color:#5DCAA5}
+.svc-tab.on.notif{background:#E6F1FB;color:#0C447C;border-color:#85B7EB}
+</style>
+
+<div class="sw">
+  <div class="pbar" id="pbar"></div>
+  <div class="slbl" id="slbl"></div>
+  <div class="panel" id="panel"></div>
+</div>
+
+<script>
+const steps=[
+{
+  label:"Step 1 of 9 — Namespace setup",
+  title:"Create namespaces for each microservice",
+  sub:"Isolate the two microservices in dedicated namespaces so they have independent RBAC, network policies, resource quotas, and resource limits.",
+  ask:"Why should each microservice have its own Kubernetes namespace?",
+  tabs:null,
+  content:()=>`<div class="code">kubectl create namespace payment-svc
+kubectl create namespace notification-svc
+kubectl create namespace monitoring
+kubectl create namespace cert-manager
+
+kubectl label namespace payment-svc      app=payment-svc  env=production
+kubectl label namespace notification-svc app=notification env=production
+
+kubectl get namespaces</div>
+<div class="chips">
+  <span class="chip chip-g">payment-svc</span>
+  <span class="chip chip-b">notification-svc</span>
+  <span class="chip chip-p">monitoring</span>
+  <span class="chip chip-a">cert-manager</span>
+</div>`
+},
+{
+  label:"Step 2 of 9 — Secrets and ConfigMaps",
+  title:"Store credentials and config for both services",
+  sub:"Never hardcode secrets in container images or YAML. Create Kubernetes Secrets (base64-encoded) and ConfigMaps for each namespace before deploying any pods.",
+  ask:"What is the best way to manage secrets in Kubernetes for production microservices?",
+  tabs:["payment-svc","notification-svc"],
+  content:(t)=>t===0?`<div class="code">kubectl create secret generic payment-db-secret \\
+  --namespace payment-svc \\
+  --from-literal=DB_HOST=payment-db.xxxx.ap-south-1.rds.amazonaws.com \\
+  --from-literal=DB_USER=paymentadmin \\
+  --from-literal=DB_PASS=YOUR_STRONG_PASSWORD \\
+  --from-literal=DB_NAME=ledgerdb
+
+kubectl create configmap payment-config \\
+  --namespace payment-svc \\
+  --from-literal=PORT=8080 \\
+  --from-literal=LOG_LEVEL=info \\
+  --from-literal=ENV=production \\
+  --from-literal=NOTIFICATION_SVC_URL=http://notification-svc.notification-svc.svc.cluster.local:8081</div>`
+  :`<div class="code">kubectl create secret generic notification-db-secret \\
+  --namespace notification-svc \\
+  --from-literal=MONGO_URI=mongodb://notifadmin:PASSWORD@notification-mongo.xxxx.docdb.amazonaws.com:27017 \\
+  --from-literal=MONGO_DB=notificationdb
+
+kubectl create configmap notification-config \\
+  --namespace notification-svc \\
+  --from-literal=PORT=8081 \\
+  --from-literal=LOG_LEVEL=info \\
+  --from-literal=ENV=production \\
+  --from-literal=SMTP_HOST=email-smtp.ap-south-1.amazonaws.com</div>`
+},
+{
+  label:"Step 3 of 9 — Docker images to ECR",
+  title:"Build and push container images",
+  sub:"Each microservice needs its own ECR repository. Tag images with the Git SHA for traceability and immutability — never use :latest in production.",
+  ask:"What is a production-grade Dockerfile for a Node.js microservice?",
+  tabs:["payment-svc","notification-svc"],
+  content:(t)=>t===0?`<div class="code">ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+REGION=ap-south-1
+
+aws ecr create-repository \\
+  --repository-name payment-api \\
+  --image-scanning-configuration scanOnPush=true
+
+aws ecr get-login-password --region $REGION | \\
+  docker login --username AWS \\
+  --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+
+docker build -t payment-api:sha-$(git rev-parse --short HEAD) \\
+  -f services/payment/Dockerfile .
+
+docker tag payment-api:sha-$(git rev-parse --short HEAD) \\
+  $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/payment-api:sha-$(git rev-parse --short HEAD)
+
+docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/payment-api:sha-$(git rev-parse --short HEAD)</div>`
+  :`<div class="code">aws ecr create-repository \\
+  --repository-name notification-svc \\
+  --image-scanning-configuration scanOnPush=true
+
+docker build -t notification-svc:sha-$(git rev-parse --short HEAD) \\
+  -f services/notification/Dockerfile .
+
+docker tag notification-svc:sha-$(git rev-parse --short HEAD) \\
+  $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/notification-svc:sha-$(git rev-parse --short HEAD)
+
+docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/notification-svc:sha-$(git rev-parse --short HEAD)</div>`
+},
+{
+  label:"Step 4 of 9 — Deployment manifests",
+  title:"Apply Deployment YAML for both microservices",
+  sub:"The Deployment defines the desired state: container image, replicas, resource limits, probes, and env references. Apply each to its own namespace.",
+  ask:"What resource limits and health probes should I set for a payment API in Kubernetes?",
+  tabs:["payment-svc","notification-svc"],
+  content:(t)=>t===0?`<div class="code">cat <<'EOF' | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+  namespace: payment-svc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+        version: "1.0"
+    spec:
+      containers:
+      - name: payment-api
+        image: &lt;ACCOUNT_ID&gt;.dkr.ecr.ap-south-1.amazonaws.com/payment-api:sha-a3f9c12
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: payment-config
+        - secretRef:
+            name: payment-db-secret
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+EOF</div>`
+  :`<div class="code">cat <<'EOF' | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-svc
+  namespace: notification-svc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-svc
+  template:
+    metadata:
+      labels:
+        app: notification-svc
+        version: "1.0"
+    spec:
+      containers:
+      - name: notification-svc
+        image: &lt;ACCOUNT_ID&gt;.dkr.ecr.ap-south-1.amazonaws.com/notification-svc:sha-b2e8d14
+        ports:
+        - containerPort: 8081
+        envFrom:
+        - configMapRef:
+            name: notification-config
+        - secretRef:
+            name: notification-db-secret
+        resources:
+          requests:
+            cpu: "150m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+EOF</div>`
+},
+{
+  label:"Step 5 of 9 — Service manifests",
+  title:"Expose each deployment with a ClusterIP Service",
+  sub:"Services give pods a stable DNS name and load-balance across pod replicas. ClusterIP keeps services internal — only the Ingress exposes them externally.",
+  ask:"What is the difference between ClusterIP, NodePort, and LoadBalancer services in Kubernetes?",
+  tabs:["payment-svc","notification-svc"],
+  content:(t)=>t===0?`<div class="code">cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-api-svc
+  namespace: payment-svc
+  labels:
+    app: payment-api
+spec:
+  type: ClusterIP
+  selector:
+    app: payment-api
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+EOF
+
+kubectl get svc -n payment-svc</div>`
+  :`<div class="code">cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-svc
+  namespace: notification-svc
+  labels:
+    app: notification-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: notification-svc
+  ports:
+  - name: http
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+EOF
+
+kubectl get svc -n notification-svc</div>`
+},
+{
+  label:"Step 6 of 9 — Ingress rules",
+  title:"Route external traffic via NGINX Ingress",
+  sub:"One Ingress resource routes /payments to payment-api-svc and /notifications to notification-svc based on path prefix. Install the NGINX Ingress controller first if not already present.",
+  ask:"How do I set up NGINX Ingress with path-based routing for multiple microservices in EKS?",
+  tabs:null,
+  content:()=>`<div class="code">helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \\
+  --namespace kube-system \\
+  --set controller.service.type=LoadBalancer \\
+  --set controller.service.annotations."service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"=nlb
+
+cat <<'EOF' | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-ingress
+  namespace: payment-svc
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /payments
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-api-svc
+            port:
+              number: 8080
+      - path: /notifications
+        pathType: Prefix
+        backend:
+          service:
+            name: notification-svc
+            port:
+              number: 8081
+EOF</div>`
+},
+{
+  label:"Step 7 of 9 — HPA (autoscaling)",
+  title:"Horizontal Pod Autoscaler for both services",
+  sub:"HPA scales pods up automatically when CPU exceeds the threshold, and scales back down when load drops. Requires metrics-server to be running in the cluster.",
+  ask:"How does Kubernetes HPA decide when to scale up or down my microservice?",
+  tabs:["payment-svc","notification-svc"],
+  content:(t)=>t===0?`<div class="code">kubectl apply -f - <<'EOF'
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payment-api-hpa
+  namespace: payment-svc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+EOF
+
+kubectl get hpa -n payment-svc</div>`
+  :`<div class="code">kubectl apply -f - <<'EOF'
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-hpa
+  namespace: notification-svc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-svc
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+EOF
+
+kubectl get hpa -n notification-svc</div>`
+},
+{
+  label:"Step 8 of 9 — Network Policy",
+  title:"Lock down inter-namespace traffic",
+  sub:"By default all pods can talk to all other pods. NetworkPolicy restricts this: payment-svc can call notification-svc, but notification-svc cannot initiate calls to payment-svc, and no external pod can reach the DB subnet.",
+  ask:"How do Kubernetes NetworkPolicies work and why are they important for microservice security?",
+  tabs:null,
+  content:()=>`<div class="code">cat <<'EOF' | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-payment-to-notification
+  namespace: notification-svc
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-svc
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          app: payment-svc
+    - podSelector:
+        matchLabels:
+          app: payment-api
+    ports:
+    - protocol: TCP
+      port: 8081
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-default
+  namespace: notification-svc
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  egress:
+  - ports:
+    - port: 27017
+      protocol: TCP
+    - port: 53
+      protocol: UDP
+EOF</div>`
+},
+{
+  label:"Step 9 of 9 — Verify and monitor",
+  title:"Check rollout status and live health",
+  sub:"After deployment, verify pods are Running, services are reachable, HPA is active, and Ingress has an external address. Then confirm end-to-end by curling the endpoints.",
+  ask:"What kubectl commands should I run after deploying a microservice to check everything is healthy?",
+  tabs:null,
+  content:()=>`<div class="code">kubectl get all -n payment-svc
+kubectl get all -n notification-svc
+
+kubectl rollout status deployment/payment-api      -n payment-svc
+kubectl rollout status deployment/notification-svc -n notification-svc
+
+kubectl get hpa -n payment-svc
+kubectl get hpa -n notification-svc
+
+kubectl get ingress -n payment-svc
+
+INGRESS_IP=$(kubectl get ingress platform-ingress -n payment-svc \\
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+curl https://$INGRESS_IP/payments/health
+curl https://$INGRESS_IP/notifications/health
+
+kubectl top pods -n payment-svc
+kubectl top pods -n notification-svc
+
+kubectl logs -n payment-svc -l app=payment-api      --tail=50
+kubectl logs -n notification-svc -l app=notification-svc --tail=50</div>
+<div class="chips">
+  <span class="chip chip-g">Rollout verified</span>
+  <span class="chip chip-b">HPA active</span>
+  <span class="chip chip-p">Ingress live</span>
+  <span class="chip chip-a">Logs clean</span>
+</div>`
+}
+];
+
+let cur=0,tab=0;
+
+function render(){
+  const s=steps[cur];
+  document.getElementById('slbl').innerHTML=`<span class="snum">${cur+1} / ${steps.length}</span>${s.label.split('—')[1].trim()}`;
+  const hasTabs=!!s.tabs;
+  let html=`<div class="ptitle">${s.title}</div><div class="psub">${s.sub}</div>`;
+  if(hasTabs){
+    html+=`<div class="svc-tabs">`;
+    s.tabs.forEach((t,i)=>html+=`<button class="svc-tab${i===tab?' on'+(i===1?' notif':''):''}" onclick="setTab(${i})">${t}</button>`);
+    html+=`</div>`;
+    html+=s.content(tab);
+  } else {
+    html+=s.content();
+  }
+  html+=`<div class="nav">
+    <button onclick="go(-1)" ${cur===0?'disabled':''}>← Back</button>
+    <button class="pri" onclick="go(1)" ${cur===steps.length-1?'disabled':''}>Next →</button>
+    <span class="pctr">${cur+1} of ${steps.length}</span>
+    <button class="ask" onclick="sendPrompt('${s.ask}')">Ask ↗</button>
+  </div>`;
+  document.getElementById('panel').innerHTML=html;
+  const pbar=document.getElementById('pbar');
+  pbar.innerHTML=steps.map((_,i)=>`<div class="pip ${i<cur?'done':i===cur?'active':''}"></div>`).join('');
+}
+
+function go(d){cur=Math.max(0,Math.min(steps.length-1,cur+d));tab=0;render()}
+function setTab(i){tab=i;render()}
+render();
+</script>
